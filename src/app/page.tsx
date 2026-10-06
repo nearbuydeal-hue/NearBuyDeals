@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const steps = [
   {
     number: "01",
@@ -45,12 +47,12 @@ export default function Home() {
               Discover what nearby shops have available, then contact them
               directly.
             </p>
-            <a
-              href="#search"
+            <Link
+              href="/signup"
               className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-800 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
             >
-              Explore the beta
-            </a>
+              List your shop
+            </Link>
           </div>
 
           <div

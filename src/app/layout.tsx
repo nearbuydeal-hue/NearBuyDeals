@@ -49,7 +49,7 @@ export default function RootLayout({
                 <li>
                   <Link
                     href="/#search"
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+                    className="hidden min-h-11 items-center rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:inline-flex"
                   >
                     Nearby shops
                   </Link>
@@ -57,9 +57,25 @@ export default function RootLayout({
                 <li>
                   <Link
                     href="/#how-it-works"
-                    className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+                    className="hidden min-h-11 items-center rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:inline-flex"
                   >
                     How it works
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/login"
+                    className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:px-3"
+                  >
+                    Log in
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/signup"
+                    className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 sm:px-3"
+                  >
+                    For shops
                   </Link>
                 </li>
               </ul>
