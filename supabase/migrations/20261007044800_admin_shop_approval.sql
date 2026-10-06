@@ -3,7 +3,7 @@ BEGIN;
 CREATE TABLE public.shop_approval_audit (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id uuid NOT NULL
-    REFERENCES public.shops (id) ON DELETE CASCADE,
+    REFERENCES public.shops (id) ON DELETE RESTRICT,
   admin_user_id uuid NOT NULL
     REFERENCES public.profiles (id) ON DELETE RESTRICT,
   previous_status public.shop_approval_status NOT NULL,
