@@ -1,8 +1,24 @@
 import Link from "next/link";
 import { NotifyAvailabilityForm } from "@/components/listings/NotifyAvailabilityForm";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  hasSupabaseServerConfig,
+} from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export default async function ListingsPage() {
+  if (!hasSupabaseServerConfig()) {
+    return (
+      <main id="main-content" className="flex-1 bg-[#f5f7ef] px-5 py-10 sm:px-8 sm:py-16">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-emerald-950/10 bg-white p-6 shadow-sm sm:p-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-emerald-950">Listings are temporarily unavailable</h1>
+          <p className="mt-3 text-base leading-7 text-slate-600">Please try again in a moment.</p>
+        </div>
+      </main>
+    );
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data: listings, error } = await supabase
     .from("listings")
