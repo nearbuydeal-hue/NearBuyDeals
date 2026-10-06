@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShopEditForm } from "@/components/auth/ShopEditForm";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  hasSupabaseServerConfig,
+} from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Edit shop information | NearbyDeals",
@@ -10,6 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function EditShopPage() {
+  if (!hasSupabaseServerConfig()) {
+    return <EditShopError />;
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
@@ -32,10 +39,23 @@ export default async function EditShopPage() {
     redirect("/dashboard");
   }
 
+  const { data: shopId, error: shopIdError } = await supabase.rpc(
+    "get_my_shop_id",
+  );
+
+  if (shopIdError) {
+    console.error("Edit-shop lookup failed:", shopIdError.code);
+    return <EditShopError />;
+  }
+
+  if (!shopId) {
+    redirect("/dashboard");
+  }
+
   const { data: shop, error: shopError } = await supabase
     .from("shops")
     .select("name, shop_type, phone, whatsapp, address, area, city")
-    .eq("owner_id", authData.user.id)
+    .eq("id", shopId)
     .maybeSingle();
 
   if (shopError) {

@@ -1,13 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import type { CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  finishOnboardingFromMetadata,
-  genericSetupError,
-} from "@/lib/auth/complete-onboarding";
+import { finishOnboardingFromMetadata } from "@/lib/auth/complete-onboarding";
+import type { Database } from "@/types/database";
 
 function redirectWithCookies(
-  request: NextRequest,
+  siteOrigin: string,
   pathname: string,
   cookiesToSet: Array<{
     name: string;
@@ -15,7 +13,7 @@ function redirectWithCookies(
     options: CookieOptions;
   }>,
 ) {
-  const response = NextResponse.redirect(new URL(pathname, request.url));
+  const response = NextResponse.redirect(new URL(pathname, siteOrigin));
   for (const cookie of cookiesToSet) {
     response.cookies.set(cookie.name, cookie.value, cookie.options);
   }
@@ -25,6 +23,7 @@ function redirectWithCookies(
 export async function GET(request: NextRequest) {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const configuredSiteUrl = process.env.SITE_URL;
   const code = request.nextUrl.searchParams.get("code");
   const cookiesToSet: Array<{
     name: string;
@@ -32,33 +31,67 @@ export async function GET(request: NextRequest) {
     options: CookieOptions;
   }> = [];
 
-  if (!supabaseUrl || !supabaseAnonKey || !code) {
-    return redirectWithCookies(request, "/login?message=confirmation", cookiesToSet);
+  let siteOrigin: string;
+  try {
+    if (!configuredSiteUrl) {
+      throw new Error("SITE_URL is missing.");
+    }
+
+    const siteUrl = new URL(configuredSiteUrl);
+    if (
+      !["http:", "https:"].includes(siteUrl.protocol) ||
+      siteUrl.username ||
+      siteUrl.password
+    ) {
+      throw new Error("SITE_URL is invalid.");
+    }
+    siteOrigin = siteUrl.origin;
+  } catch {
+    return NextResponse.json(
+      { error: "Authentication is not configured for this environment." },
+      { status: 503 },
+    );
   }
 
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookies) {
-        cookiesToSet.push(...cookies);
+  if (!supabaseUrl || !supabaseAnonKey || !code) {
+    return redirectWithCookies(
+      siteOrigin,
+      "/login?message=confirmation",
+      cookiesToSet,
+    );
+  }
+
+  const supabase = createServerClient<Database>(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookies) {
+          cookiesToSet.push(...cookies);
+        },
       },
     },
-  });
+  );
 
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) {
     console.error("Auth confirmation callback failed:", error?.code);
-    return redirectWithCookies(request, "/login?message=confirmation", cookiesToSet);
+    return redirectWithCookies(
+      siteOrigin,
+      "/login?message=confirmation",
+      cookiesToSet,
+    );
   }
 
-  const onboarding = await finishOnboardingFromMetadata(data.user);
+  const onboarding = await finishOnboardingFromMetadata(data.user, supabase);
   if (onboarding.error) {
     await supabase.auth.signOut();
     console.error("Confirmed account could not finish shop onboarding.");
     return redirectWithCookies(
-      request,
+      siteOrigin,
       "/signup?error=setup",
       cookiesToSet,
     );
@@ -66,8 +99,12 @@ export async function GET(request: NextRequest) {
 
   if (!onboarding.completed) {
     await supabase.auth.signOut();
-    return redirectWithCookies(request, "/login?error=shop-owner", cookiesToSet);
+    return redirectWithCookies(
+      siteOrigin,
+      "/login?error=shop-owner",
+      cookiesToSet,
+    );
   }
 
-  return redirectWithCookies(request, "/dashboard", cookiesToSet);
+  return redirectWithCookies(siteOrigin, "/dashboard", cookiesToSet);
 }

@@ -11,9 +11,9 @@ export const genericSetupError =
   "Your account was created, but shop setup could not be completed. Sign in again or contact support.";
 
 export async function completeShopOwnerSignup(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   shopDetails: ShopDetails,
 ): Promise<{ error: string | null }> {
-  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("complete_shop_owner_signup", {
     _full_name: shopDetails.fullName,
     _phone: shopDetails.phone,
@@ -30,12 +30,12 @@ export async function completeShopOwnerSignup(
     return { error: genericSetupError };
   }
 
-  await clearOnboardingMetadata(supabase);
-  return { error: null };
+  return clearOnboardingMetadata(supabase);
 }
 
 export async function finishOnboardingFromMetadata(
   user: User,
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
 ): Promise<{ completed: boolean; error: string | null }> {
   const metadata = user.user_metadata?.shop_onboarding;
   if (metadata === undefined || metadata === null) {
@@ -48,19 +48,13 @@ export async function finishOnboardingFromMetadata(
     return { completed: false, error: genericSetupError };
   }
 
-  const result = await completeShopOwnerSignup(shopDetails);
+  const result = await completeShopOwnerSignup(supabase, shopDetails);
   return { completed: !result.error, error: result.error };
 }
 
 async function clearOnboardingMetadata(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-) {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) {
-    console.error("Could not reload user after shop onboarding:", error?.code);
-    return;
-  }
-
+): Promise<{ error: string | null }> {
   const { error: updateError } = await supabase.auth.updateUser({
     data: { shop_onboarding: null },
   });
@@ -70,5 +64,8 @@ async function clearOnboardingMetadata(
       "Could not clear completed shop onboarding metadata:",
       updateError.code,
     );
+    return { error: genericSetupError };
   }
+
+  return { error: null };
 }

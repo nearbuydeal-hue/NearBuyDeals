@@ -44,6 +44,28 @@ supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
 ```
 
+For the Next.js app, copy `.env.example` to `.env.local` and set `SITE_URL`,
+`SUPABASE_URL`, and `SUPABASE_ANON_KEY` from the Supabase project settings.
+`SITE_URL` is the app's canonical origin used for email confirmation
+redirects. Never put a service-role key in this file.
+Configure Supabase Auth's Site URL to match `SITE_URL`, and allow
+`SITE_URL/auth/callback` as a redirect URL. Shop-owner onboarding depends on
+the initial schema and onboarding migrations being applied before the app can
+read or write account data.
+
+Before applying the onboarding migration to a database that already contains
+shops, confirm each owner has at most one shop:
+
+```sql
+SELECT owner_id, count(*)
+FROM public.shops
+GROUP BY owner_id
+HAVING count(*) > 1;
+```
+
+The onboarding migration enforces one shop per owner to match the dashboard
+and self-service signup flow.
+
 Do not put database passwords or service-role keys in source code. The initial
 admin must be provisioned by a trusted project operator after the migration
 and profile trigger are installed; ordinary users cannot assign roles to

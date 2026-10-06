@@ -1,11 +1,10 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import {
   completeShopOwnerSignup,
   finishOnboardingFromMetadata,
-  genericSetupError,
 } from "@/lib/auth/complete-onboarding";
 import {
   getFirstValidationError,
@@ -13,7 +12,10 @@ import {
   shopOwnerSignupSchema,
   shopDetailsSchema,
 } from "@/lib/validation/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  hasSupabaseServerConfig,
+} from "@/lib/supabase/server";
 
 export type FormActionState = {
   error?: string;
@@ -24,7 +26,9 @@ const genericSignupError =
   "We couldn’t create your account. Check your details and try again.";
 
 function getFormValues(formData: FormData): Record<string, FormDataEntryValue> {
-  return Object.fromEntries(formData.entries());
+  return Object.fromEntries(
+    [...formData.entries()].filter(([name]) => !name.startsWith("$ACTION_")),
+  );
 }
 
 export async function signupAction(
@@ -36,26 +40,34 @@ export async function signupAction(
     return { error: getFirstValidationError(parsed.error) };
   }
 
-  const requestHeaders = await headers();
-  const origin = requestHeaders.get("origin");
-  if (!origin) {
-    return { error: "Refresh the page and try signing up again." };
+  if (!hasSupabaseServerConfig() || !process.env.SITE_URL) {
+    return {
+      error: "Shop signup is not configured yet. Please try again later.",
+    };
   }
+
+  const supabase = await createSupabaseServerClient();
 
   let emailRedirectTo: string;
   try {
-    const parsedOrigin = new URL(origin);
-    if (!["http:", "https:"].includes(parsedOrigin.protocol)) {
-      return { error: "Refresh the page and try signing up again." };
+    const siteURL = new URL(process.env.SITE_URL);
+    if (
+      !["http:", "https:"].includes(siteURL.protocol) ||
+      siteURL.username ||
+      siteURL.password
+    ) {
+      return {
+        error: "Shop signup is not configured yet. Please try again later.",
+      };
     }
-    emailRedirectTo = new URL("/auth/callback", parsedOrigin.origin).toString();
+    emailRedirectTo = new URL("/auth/callback", siteURL.origin).toString();
   } catch {
-    return { error: "Refresh the page and try signing up again." };
+    return {
+      error: "Shop signup is not configured yet. Please try again later.",
+    };
   }
 
-  const { data, error } = await (
-    await createSupabaseServerClient()
-  ).auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -68,7 +80,7 @@ export async function signupAction(
           phone: parsed.data.phone,
           shopName: parsed.data.shopName,
           shopType: parsed.data.shopType,
-          whatsapp: parsed.data.whatsapp ?? "",
+          whatsapp: parsed.data.whatsapp,
           address: parsed.data.address,
           area: parsed.data.area,
           city: parsed.data.city,
@@ -83,9 +95,8 @@ export async function signupAction(
   }
 
   if (data.session) {
-    const result = await completeShopOwnerSignup(parsed.data);
+    const result = await completeShopOwnerSignup(supabase, parsed.data);
     if (result.error) {
-      const supabase = await createSupabaseServerClient();
       await supabase.auth.signOut();
       return { error: result.error };
     }
@@ -107,6 +118,10 @@ export async function loginAction(
     return { error: getFirstValidationError(parsed.error) };
   }
 
+  if (!hasSupabaseServerConfig()) {
+    return { error: "Login is not configured yet. Please try again later." };
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
 
@@ -117,7 +132,7 @@ export async function loginAction(
     return { error: "Email or password is incorrect. Try again." };
   }
 
-  const onboarding = await finishOnboardingFromMetadata(data.user);
+  const onboarding = await finishOnboardingFromMetadata(data.user, supabase);
   if (onboarding.error) {
     await supabase.auth.signOut();
     return { error: onboarding.error };
@@ -151,6 +166,13 @@ export async function logoutAction(
   _previousState: FormActionState,
   _formData: FormData,
 ): Promise<FormActionState> {
+  void _previousState;
+  void _formData;
+
+  if (!hasSupabaseServerConfig()) {
+    return { error: "Logout is not configured yet. Please try again later." };
+  }
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signOut();
 
@@ -169,6 +191,12 @@ export async function updateShopAction(
   const parsed = shopDetailsSchema.safeParse(getFormValues(formData));
   if (!parsed.success) {
     return { error: getFirstValidationError(parsed.error) };
+  }
+
+  if (!hasSupabaseServerConfig()) {
+    return {
+      error: "Shop editing is not configured yet. Please try again later.",
+    };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -193,29 +221,27 @@ export async function updateShopAction(
     return { error: "This account does not have shop-owner access." };
   }
 
-  const { data: updatedShop, error: updateError } = await supabase
-    .from("shops")
-    .update({
-      name: parsed.data.shopName,
-      shop_type: parsed.data.shopType,
-      phone: parsed.data.phone,
-      whatsapp: parsed.data.whatsapp ?? null,
-      address: parsed.data.address,
-      area: parsed.data.area,
-      city: parsed.data.city,
-    })
-    .eq("owner_id", userData.user.id)
-    .select("id")
-    .maybeSingle();
+  const { error: updateError } = await supabase.rpc(
+    "update_my_shop_owner_details",
+    {
+      _full_name: parsed.data.fullName,
+      _phone: parsed.data.phone,
+      _shop_name: parsed.data.shopName,
+      _shop_type: parsed.data.shopType,
+      _whatsapp: parsed.data.whatsapp ?? null,
+      _address: parsed.data.address,
+      _area: parsed.data.area,
+      _city: parsed.data.city,
+    },
+  );
 
   if (updateError) {
     console.error("Could not update shop information:", updateError.code);
     return { error: "We couldn’t save your shop details. Try again later." };
   }
 
-  if (!updatedShop) {
-    return { error: "Your shop could not be found. Contact support for help." };
-  }
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/edit-shop");
 
   return { success: "Shop information saved." };
 }

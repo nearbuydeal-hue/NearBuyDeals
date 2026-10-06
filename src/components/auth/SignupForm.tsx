@@ -92,13 +92,14 @@ export function SignupForm() {
           />
         </label>
         <label className={labelClassName}>
-          WhatsApp <span className="font-normal text-slate-500">(optional)</span>
+          WhatsApp
           <input
             className={inputClassName}
             name="whatsapp"
             type="tel"
             autoComplete="tel"
             maxLength={32}
+            required
           />
         </label>
         <label className={`${labelClassName} sm:col-span-2`}>

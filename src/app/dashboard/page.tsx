@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogoutForm } from "@/components/auth/LogoutForm";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseServerClient,
+  hasSupabaseServerConfig,
+} from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Shop dashboard | NearbyDeals",
@@ -40,7 +43,17 @@ function formatShopType(shopType: string) {
   return shopType.charAt(0).toUpperCase() + shopType.slice(1);
 }
 
+function isApprovalStatus(
+  status: string,
+): status is keyof typeof approvalMessages {
+  return Object.hasOwn(approvalMessages, status);
+}
+
 export default async function DashboardPage() {
+  if (!hasSupabaseServerConfig()) {
+    return <DashboardNotConfigured />;
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
@@ -63,12 +76,25 @@ export default async function DashboardPage() {
     return <ShopOwnerAccessRequired />;
   }
 
+  const { data: shopId, error: shopIdError } = await supabase.rpc(
+    "get_my_shop_id",
+  );
+
+  if (shopIdError) {
+    console.error("Dashboard shop lookup failed:", shopIdError.code);
+    return <DashboardError />;
+  }
+
+  if (!shopId) {
+    return <ShopMissing />;
+  }
+
   const { data: shop, error: shopError } = await supabase
     .from("shops")
     .select(
       "id, name, shop_type, phone, whatsapp, address, area, city, approval_status",
     )
-    .eq("owner_id", authData.user.id)
+    .eq("id", shopId)
     .maybeSingle();
 
   if (shopError) {
@@ -80,8 +106,12 @@ export default async function DashboardPage() {
     return <ShopMissing />;
   }
 
-  const status =
-    approvalMessages[shop.approval_status as keyof typeof approvalMessages];
+  if (!isApprovalStatus(shop.approval_status)) {
+    console.error("Dashboard shop has an unsupported approval status.");
+    return <DashboardError />;
+  }
+
+  const status = approvalMessages[shop.approval_status];
 
   return (
     <main
@@ -185,6 +215,15 @@ function DashboardError() {
     <DashboardMessage
       title="Dashboard temporarily unavailable"
       description="We couldn’t load your account information. Please try again later."
+    />
+  );
+}
+
+function DashboardNotConfigured() {
+  return (
+    <DashboardMessage
+      title="Dashboard is not configured"
+      description="Supabase authentication is not configured for this environment."
     />
   );
 }

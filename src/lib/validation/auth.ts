@@ -5,7 +5,7 @@ const phoneSchema = z
   .trim()
   .min(7, "Enter a valid phone number.")
   .max(32, "Phone numbers must be 32 characters or fewer.")
-  .regex(/^\+?[0-9().\s-]+$/, "Enter a valid phone number.")
+  .regex(/^\+?[0-9(). -]+$/, "Enter a valid phone number.")
   .refine(
     (value) => {
       const digitCount = value.replace(/\D/g, "").length;
@@ -14,14 +14,15 @@ const phoneSchema = z
     "Enter a phone number with 7 to 15 digits.",
   );
 
-const optionalPhoneSchema = z.preprocess(
-  (value) => (value === "" ? undefined : value),
-  phoneSchema.optional(),
-);
+const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email("Enter a valid email address."));
 
-export const shopOwnerSignupSchema = z.object({
+export const shopOwnerSignupSchema = z.strictObject({
   fullName: z.string().trim().min(1, "Enter your full name.").max(120),
-  email: z.email("Enter a valid email address.").trim().toLowerCase(),
+  email: emailSchema,
   password: z
     .string()
     .min(12, "Use a password with at least 12 characters.")
@@ -31,22 +32,21 @@ export const shopOwnerSignupSchema = z.object({
     error: "Select a shop type.",
   }),
   phone: phoneSchema,
-  whatsapp: optionalPhoneSchema,
+  whatsapp: phoneSchema,
   address: z.string().trim().min(1, "Enter the shop address.").max(300),
   area: z.string().trim().min(1, "Enter the area.").max(120),
   city: z.string().trim().min(1, "Enter the city.").max(120),
 });
 
-export const shopDetailsSchema = shopOwnerSignupSchema
-  .omit({ email: true, password: true })
-  .extend({
-    whatsapp: optionalPhoneSchema,
-  });
+export const shopDetailsSchema = shopOwnerSignupSchema.omit({
+  email: true,
+  password: true,
+});
 
 export const shopOnboardingMetadataSchema = shopDetailsSchema;
 
-export const loginSchema = z.object({
-  email: z.email("Enter a valid email address.").trim().toLowerCase(),
+export const loginSchema = z.strictObject({
+  email: emailSchema,
   password: z.string().min(1, "Enter your password.").max(72),
 });
 

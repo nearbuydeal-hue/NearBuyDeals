@@ -6,13 +6,6 @@ export async function proxy(request: NextRequest) {
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    if (
-      request.nextUrl.pathname.startsWith("/dashboard") ||
-      request.nextUrl.pathname.startsWith("/auth")
-    ) {
-      return NextResponse.next();
-    }
-
     return NextResponse.next();
   }
 

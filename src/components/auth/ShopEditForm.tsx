@@ -57,7 +57,7 @@ export function ShopEditForm({ shop }: { shop: ShopDetails }) {
           />
         </label>
         <label className={labelClassName}>
-          WhatsApp <span className="font-normal text-slate-500">(optional)</span>
+          WhatsApp
           <input
             className={inputClassName}
             name="whatsapp"
@@ -65,6 +65,7 @@ export function ShopEditForm({ shop }: { shop: ShopDetails }) {
             autoComplete="tel"
             maxLength={32}
             defaultValue={shop.whatsapp ?? ""}
+            required
           />
         </label>
         <label className={`${labelClassName} sm:col-span-2`}>
