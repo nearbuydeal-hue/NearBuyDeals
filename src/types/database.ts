@@ -231,6 +231,13 @@ export type Database = {
         };
         Returns: undefined;
       };
+      set_shop_approval_status: {
+        Args: {
+          _shop_id: string;
+          _status: ShopApprovalStatus;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       app_role: AppRole;

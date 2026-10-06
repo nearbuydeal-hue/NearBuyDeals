@@ -22,6 +22,8 @@ export type FormActionState = {
   success?: string;
 };
 
+const genericShopSetupError =
+  "We couldn’t complete your shop setup. Check your details and try again.";
 const genericSignupError =
   "We couldn’t create your account. Check your details and try again.";
 
@@ -107,6 +109,86 @@ export async function signupAction(
     success:
       "Check your email for a confirmation link. Your shop setup will finish after you confirm your address.",
   };
+}
+
+export async function googleAuthAction(): Promise<void> {
+  const siteUrl = process.env.SITE_URL;
+  if (!hasSupabaseServerConfig() || !siteUrl) {
+    redirect("/login?error=oauth");
+  }
+
+  let callbackUrl: string;
+  try {
+    const parsedSiteUrl = new URL(siteUrl);
+    if (
+      !["http:", "https:"].includes(parsedSiteUrl.protocol) ||
+      parsedSiteUrl.username ||
+      parsedSiteUrl.password
+    ) {
+      redirect("/login?error=oauth");
+    }
+    callbackUrl = new URL("/auth/callback", parsedSiteUrl.origin).toString();
+  } catch {
+    redirect("/login?error=oauth");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: callbackUrl },
+  });
+
+  if (error || !data.url) {
+    console.error("Google sign-in could not be started:", error?.code);
+    redirect("/login?error=oauth");
+  }
+
+  redirect(data.url);
+}
+
+export async function completeGoogleShopSignupAction(
+  _previousState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const parsed = shopDetailsSchema.safeParse(getFormValues(formData));
+  if (!parsed.success) {
+    return { error: getFirstValidationError(parsed.error) };
+  }
+
+  if (!hasSupabaseServerConfig()) {
+    return { error: "Shop setup is not configured yet. Please try again later." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    redirect("/login?error=oauth-session");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    console.error(
+      "Could not verify Google account for shop setup:",
+      profileError?.code,
+    );
+    return { error: genericShopSetupError };
+  }
+
+  if (profile.role !== "customer" && profile.role !== "shop_owner") {
+    return { error: "This account cannot be used for shop-owner signup." };
+  }
+
+  const result = await completeShopOwnerSignup(supabase, parsed.data);
+  if (result.error) {
+    return { error: result.error };
+  }
+
+  redirect("/dashboard");
 }
 
 export async function loginAction(

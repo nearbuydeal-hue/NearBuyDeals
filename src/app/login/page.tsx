@@ -26,6 +26,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     params.error === "shop-owner"
       ? "This account does not have shop-owner access. Sign up as a shop owner to continue."
       : undefined;
+  const authError =
+    params.error === "oauth"
+      ? "Google sign-in failed. Check that Google is enabled in Supabase and try again."
+      : params.error === "oauth-session"
+        ? "Your sign-in session expired. Continue with Google again to finish shop setup."
+        : undefined;
 
   return (
     <main
@@ -50,7 +56,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Manage your shop information and check its approval status.
           </p>
           <div className="mt-7">
-            <LoginForm notice={notice} />
+            <LoginForm notice={notice} authError={authError} />
             {error ? (
               <p
                 role="status"

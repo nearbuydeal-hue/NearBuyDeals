@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signupAction } from "@/app/actions/auth";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
+import { ShopDetailsFields } from "@/components/auth/ShopDetailsFields";
 
 const initialState = { error: undefined, success: undefined };
 const inputClassName =
@@ -13,129 +15,38 @@ export function SignupForm() {
   const [state, action, pending] = useActionState(signupAction, initialState);
 
   return (
-    <form action={action} className="grid gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className={`${labelClassName} sm:col-span-2`}>
-          Full name
-          <input
-            className={inputClassName}
-            name="fullName"
-            type="text"
-            autoComplete="name"
-            maxLength={120}
-            required
-          />
-        </label>
-        <label className={`${labelClassName} sm:col-span-2`}>
-          Email
-          <input
-            className={inputClassName}
-            name="email"
-            type="email"
-            autoComplete="email"
-            maxLength={320}
-            required
-          />
-        </label>
-        <label className={`${labelClassName} sm:col-span-2`}>
-          Password
-          <input
-            className={inputClassName}
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            minLength={12}
-            maxLength={72}
-            required
-            aria-describedby="password-hint"
-          />
-          <span id="password-hint" className="font-normal text-slate-500">
-            Use at least 12 characters.
-          </span>
-        </label>
-        <label className={`${labelClassName} sm:col-span-2`}>
-          Shop name
-          <input
-            className={inputClassName}
-            name="shopName"
-            type="text"
-            autoComplete="organization"
-            maxLength={120}
-            required
-          />
-        </label>
-        <label className={labelClassName}>
-          Shop type
-          <select
-            className={inputClassName}
-            name="shopType"
-            defaultValue=""
-            required
-          >
-            <option value="" disabled>
-              Choose a type
-            </option>
-            <option value="pharmacy">Pharmacy</option>
-            <option value="grocery">Grocery</option>
-            <option value="restaurant">Restaurant</option>
-          </select>
-        </label>
-        <label className={labelClassName}>
-          Phone
-          <input
-            className={inputClassName}
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            maxLength={32}
-            required
-          />
-        </label>
-        <label className={labelClassName}>
-          WhatsApp
-          <input
-            className={inputClassName}
-            name="whatsapp"
-            type="tel"
-            autoComplete="tel"
-            maxLength={32}
-            required
-          />
-        </label>
-        <label className={`${labelClassName} sm:col-span-2`}>
-          Address
-          <input
-            className={inputClassName}
-            name="address"
-            type="text"
-            autoComplete="street-address"
-            maxLength={300}
-            required
-          />
-        </label>
-        <label className={labelClassName}>
-          Area
-          <input
-            className={inputClassName}
-            name="area"
-            type="text"
-            autoComplete="address-level3"
-            maxLength={120}
-            required
-          />
-        </label>
-        <label className={labelClassName}>
-          City
-          <input
-            className={inputClassName}
-            name="city"
-            type="text"
-            autoComplete="address-level2"
-            maxLength={120}
-            required
-          />
-        </label>
-      </div>
+    <div className="grid gap-5">
+      <form action={action} className="grid gap-5">
+        <ShopDetailsFields />
+        <div className="grid gap-4">
+          <label className={`${labelClassName} sm:col-span-2`}>
+            Email
+            <input
+              className={inputClassName}
+              name="email"
+              type="email"
+              autoComplete="email"
+              maxLength={320}
+              required
+            />
+          </label>
+          <label className={`${labelClassName} sm:col-span-2`}>
+            Password
+            <input
+              className={inputClassName}
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={72}
+              required
+              aria-describedby="password-hint"
+            />
+            <span id="password-hint" className="font-normal text-slate-500">
+              Use at least 12 characters.
+            </span>
+          </label>
+        </div>
 
       <div aria-live="polite" aria-atomic="true">
         {state.error ? (
@@ -172,6 +83,9 @@ export function SignupForm() {
           Log in
         </Link>
       </p>
-    </form>
+      </form>
+      <p className="text-center text-sm text-slate-500">or</p>
+      <GoogleAuthButton />
+    </div>
   );
 }

@@ -46,10 +46,42 @@ supabase db push
 
 For the Next.js app, copy `.env.example` to `.env.local` and set `SITE_URL`,
 `SUPABASE_URL`, and `SUPABASE_ANON_KEY` from the Supabase project settings.
-`SITE_URL` is the app's canonical origin used for email confirmation
-redirects. Never put a service-role key in this file.
+`SITE_URL` is the app's canonical origin used for email confirmation and
+Google OAuth redirects. It must match the origin where the local app is
+actually running (for example, `http://127.0.0.1:3001`). Never put a
+service-role key in this file.
+
 Configure Supabase Auth's Site URL to match `SITE_URL`, and allow
-`SITE_URL/auth/callback` as a redirect URL. Shop-owner onboarding depends on
+`SITE_URL/auth/callback` as a redirect URL under Authentication → URL
+Configuration.
+
+### Email and Google authentication
+
+Email/password sign-up is available in the app. In Supabase, enable the Email
+provider under Authentication → Providers → Email. Set the Site URL and
+redirect URL as described above so confirmation links return to the app.
+Supabase's built-in email sender is suitable for basic testing; configure a
+trusted custom SMTP provider before relying on confirmation emails in
+production.
+
+Google sign-in is available from the login and shop sign-up pages. To enable
+it:
+
+1. In Google Cloud Console, create/select a project, configure the OAuth
+   consent screen, and create an OAuth client ID of type **Web application**.
+2. Add the Supabase Auth callback URL
+   `https://<your-project-ref>.supabase.co/auth/v1/callback` as an
+   **Authorized redirect URI** in the Google OAuth client.
+3. In Supabase Authentication → Providers → Google, enable Google and enter
+   the Google client ID and client secret.
+4. In Google Cloud's OAuth consent screen, add your Google account as a test
+   user if the app is still in testing mode.
+5. In Supabase Authentication → URL Configuration, ensure
+   `SITE_URL/auth/callback` is in **Redirect URLs**. The Google OAuth callback
+   configured in Google Cloud is the Supabase URL from step 2, not the app URL.
+
+New Google users are signed in first and then asked for their shop details;
+the app creates the shop as pending review. Shop-owner onboarding depends on
 the initial schema and onboarding migrations being applied before the app can
 read or write account data.
 

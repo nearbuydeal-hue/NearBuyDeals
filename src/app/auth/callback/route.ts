@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
   const configuredSiteUrl = process.env.SITE_URL;
   const code = request.nextUrl.searchParams.get("code");
+  const providerError = request.nextUrl.searchParams.get("error");
   const cookiesToSet: Array<{
     name: string;
     value: string;
@@ -51,6 +52,10 @@ export async function GET(request: NextRequest) {
       { error: "Authentication is not configured for this environment." },
       { status: 503 },
     );
+  }
+
+  if (providerError) {
+    return redirectWithCookies(siteOrigin, "/login?error=oauth", cookiesToSet);
   }
 
   if (!supabaseUrl || !supabaseAnonKey || !code) {
@@ -98,12 +103,37 @@ export async function GET(request: NextRequest) {
   }
 
   if (!onboarding.completed) {
-    await supabase.auth.signOut();
-    return redirectWithCookies(
-      siteOrigin,
-      "/login?error=shop-owner",
-      cookiesToSet,
-    );
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      await supabase.auth.signOut();
+      console.error(
+        "Could not verify account after authentication callback:",
+        profileError?.code,
+      );
+      return redirectWithCookies(siteOrigin, "/login?error=oauth", cookiesToSet);
+    }
+
+    if (profile.role === "customer") {
+      return redirectWithCookies(
+        siteOrigin,
+        "/signup/complete",
+        cookiesToSet,
+      );
+    }
+
+    if (profile.role !== "shop_owner") {
+      await supabase.auth.signOut();
+      return redirectWithCookies(
+        siteOrigin,
+        "/login?error=shop-owner",
+        cookiesToSet,
+      );
+    }
   }
 
   return redirectWithCookies(siteOrigin, "/dashboard", cookiesToSet);
