@@ -51,6 +51,12 @@ Google OAuth redirects. It must match the origin where the local app is
 actually running (for example, `http://127.0.0.1:3001`). Never put a
 service-role key in this file.
 
+The deployed Vercel project also needs `SUPABASE_SERVICE_ROLE_KEY` and
+`CRON_SECRET` configured as server-only environment variables for the daily
+listing-expiry cron. The cron endpoint is protected by `CRON_SECRET`; do not
+prefix either variable with `NEXT_PUBLIC_`. Apply the expiry and availability
+request migration with `supabase db push` before deploying this code.
+
 Configure Supabase Auth's Site URL to match `SITE_URL`, and allow
 `SITE_URL/auth/callback` as a redirect URL under Authentication → URL
 Configuration.
@@ -153,3 +159,10 @@ when supplied, an active listing); they cannot read, change, or delete events.
 This insert-only endpoint can still be abused to inflate counts, so add
 server-side validation and rate limiting before using these events for
 decisions.
+
+Availability requests are separate from contact-intent rows. Anonymous
+customers can submit an email or WhatsApp contact for an approved shop's
+currently sold-out item. The database limits a contact to five requests per
+24-hour period and prevents duplicate requests for the same item in that
+period. Request details are not public or visible to shop owners; they are
+available only to authorized admins. No notification is sent automatically.

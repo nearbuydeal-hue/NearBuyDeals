@@ -8,7 +8,9 @@ import {
 } from "@/lib/supabase/server";
 import {
   getFirstValidationError,
+  listingIdSchema,
   listingFormSchema,
+  listingStatusUpdateSchema,
 } from "@/lib/validation/listings";
 
 function getFormValues(formData: FormData): Record<string, FormDataEntryValue> {
@@ -73,6 +75,9 @@ export async function createListingAction(formData: FormData) {
   }
 
   const { supabase, shop } = await getAuthenticatedShopOwner();
+  const isPastExpiry =
+    parsed.data.expiryDate !== undefined &&
+    parsed.data.expiryDate < new Date().toISOString().slice(0, 10);
 
   const { error } = await supabase.from("listings").insert({
     shop_id: shop.id,
@@ -83,7 +88,7 @@ export async function createListingAction(formData: FormData) {
     unit: parsed.data.unit,
     price: parsed.data.price ?? null,
     expiry_date: parsed.data.expiryDate ?? null,
-    status: "active",
+    status: isPastExpiry ? "expired" : "active",
   });
 
   if (error) {
@@ -96,22 +101,20 @@ export async function createListingAction(formData: FormData) {
 }
 
 export async function updateListingAction(formData: FormData) {
-  const parsed = listingFormSchema.safeParse(getFormValues(formData));
+  const parsed = listingStatusUpdateSchema.safeParse({
+    listingId: formData.get("listingId"),
+    status: formData.get("status"),
+  });
   if (!parsed.success) {
     redirect(`/dashboard/listings?error=${encodeURIComponent(getFirstValidationError(parsed.error))}`);
-  }
-
-  const listingId = String(formData.get("listingId") ?? "");
-  if (!listingId) {
-    redirect("/dashboard/listings?error=missing");
   }
 
   const { supabase, shop } = await getAuthenticatedShopOwner();
 
   const { data: listing, error: lookupError } = await supabase
     .from("listings")
-    .select("id, shop_id")
-    .eq("id", listingId)
+    .select("id, shop_id, expiry_date")
+    .eq("id", parsed.data.listingId)
     .maybeSingle();
 
   if (lookupError) {
@@ -126,16 +129,14 @@ export async function updateListingAction(formData: FormData) {
   const { error } = await supabase
     .from("listings")
     .update({
-      item_name: parsed.data.itemName,
-      description: parsed.data.description ?? null,
-      category: parsed.data.category ?? null,
-      quantity: parsed.data.quantity,
-      unit: parsed.data.unit,
-      price: parsed.data.price ?? null,
-      expiry_date: parsed.data.expiryDate ?? null,
-      status: parsed.data.status ?? "active",
+      status:
+        parsed.data.status === "active" &&
+        listing.expiry_date !== null &&
+        listing.expiry_date < new Date().toISOString().slice(0, 10)
+          ? "expired"
+          : parsed.data.status,
     })
-    .eq("id", listingId)
+    .eq("id", parsed.data.listingId)
     .eq("shop_id", shop.id);
 
   if (error) {
@@ -148,8 +149,8 @@ export async function updateListingAction(formData: FormData) {
 }
 
 export async function removeListingAction(formData: FormData) {
-  const listingId = String(formData.get("listingId") ?? "");
-  if (!listingId) {
+  const parsed = listingIdSchema.safeParse(formData.get("listingId"));
+  if (!parsed.success) {
     redirect("/dashboard/listings?error=missing");
   }
 
@@ -158,7 +159,7 @@ export async function removeListingAction(formData: FormData) {
   const { data: listing, error: lookupError } = await supabase
     .from("listings")
     .select("id, shop_id")
-    .eq("id", listingId)
+    .eq("id", parsed.data)
     .maybeSingle();
 
   if (lookupError) {
@@ -173,7 +174,7 @@ export async function removeListingAction(formData: FormData) {
   const { error } = await supabase
     .from("listings")
     .update({ status: "removed" })
-    .eq("id", listingId)
+    .eq("id", parsed.data)
     .eq("shop_id", shop.id);
 
   if (error) {

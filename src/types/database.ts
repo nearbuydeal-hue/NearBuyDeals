@@ -238,6 +238,18 @@ export type Database = {
         };
         Returns: undefined;
       };
+      expire_active_listings: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      request_listing_availability: {
+        Args: {
+          _listing_id: string;
+          _contact_method: "whatsapp" | "email";
+          _contact_value: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       app_role: AppRole;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NotifyAvailabilityForm } from "@/components/listings/NotifyAvailabilityForm";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function ListingsPage() {
@@ -8,7 +9,8 @@ export default async function ListingsPage() {
     .select(
       "id, item_name, description, category, quantity, unit, price, expiry_date, status, created_at, shop_id",
     )
-    .eq("status", "active")
+    .in("status", ["active", "sold_out"])
+    .or(`expiry_date.is.null,expiry_date.gte.${new Date().toISOString().slice(0, 10)}`)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -63,6 +65,12 @@ export default async function ListingsPage() {
   const approvedListings = (listings ?? []).filter((listing) =>
     approvedShopMap.has(listing.shop_id),
   );
+  const activeListings = approvedListings.filter(
+    (listing) => listing.status === "active",
+  );
+  const unavailableListings = approvedListings.filter(
+    (listing) => listing.status === "sold_out",
+  );
 
   return (
     <main id="main-content" className="flex-1 bg-[#f5f7ef] px-5 py-10 sm:px-8 sm:py-16">
@@ -75,9 +83,9 @@ export default async function ListingsPage() {
           <Link href="/" className="inline-flex min-h-11 items-center rounded-full border border-emerald-900/20 px-5 text-sm font-semibold text-emerald-950 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">Back home</Link>
         </div>
 
-        {approvedListings.length > 0 ? (
+        {activeListings.length > 0 ? (
           <ul className="mt-8 grid gap-4 md:grid-cols-2">
-            {approvedListings.map((listing) => {
+            {activeListings.map((listing) => {
               const shop = approvedShopMap.get(listing.shop_id);
 
               if (!shop) {
@@ -91,7 +99,7 @@ export default async function ListingsPage() {
                       <p className="text-sm font-medium text-emerald-800">{shop.name}</p>
                       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-emerald-950">{listing.item_name}</h2>
                     </div>
-                    <span className="inline-flex rounded-full border border-emerald-900/15 bg-emerald-50 px-2.5 py-1 text-xs font-medium uppercase tracking-[0.12em] text-emerald-800">{listing.status}</span>
+                    <span className="inline-flex rounded-full border border-emerald-900/15 bg-emerald-50 px-2.5 py-1 text-xs font-medium uppercase tracking-[0.12em] text-emerald-800">Active</span>
                   </div>
 
                   <div className="mt-4 space-y-2 text-sm leading-6 text-slate-700">
@@ -116,11 +124,47 @@ export default async function ListingsPage() {
               );
             })}
           </ul>
-        ) : (
+        ) : null}
+
+        {unavailableListings.length > 0 ? (
+          <section aria-labelledby="unavailable-heading" className="mt-10">
+            <h2 id="unavailable-heading" className="text-xl font-semibold tracking-tight text-emerald-950">
+              Currently unavailable
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Request availability updates for sold-out items. We do not send notifications yet.
+            </p>
+            <ul className="mt-5 grid gap-4 md:grid-cols-2">
+              {unavailableListings.map((listing) => {
+                const shop = approvedShopMap.get(listing.shop_id);
+
+                if (!shop) {
+                  return null;
+                }
+
+                return (
+                  <li key={listing.id} className="rounded-3xl border border-amber-900/10 bg-white p-5 shadow-sm sm:p-6">
+                    <p className="text-sm font-medium text-emerald-800">{shop.name}</p>
+                    <h3 className="mt-2 text-xl font-semibold tracking-tight text-emerald-950">
+                      {listing.item_name}
+                    </h3>
+                    {listing.category ? (
+                      <p className="mt-2 text-sm text-slate-600">Category: {listing.category}</p>
+                    ) : null}
+                    <p className="mt-2 text-sm font-medium text-amber-900">Sold out</p>
+                    <NotifyAvailabilityForm listingId={listing.id} />
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
+
+        {activeListings.length === 0 && unavailableListings.length === 0 ? (
           <div className="mt-8 rounded-3xl border border-dashed border-emerald-900/20 bg-[#f8f9f5] p-8 text-center text-slate-600">
             No active listings are available right now. Please check back later.
           </div>
-        )}
+        ) : null}
       </div>
     </main>
   );

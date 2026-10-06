@@ -14,6 +14,20 @@ const inputClassName =
   "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-900 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800";
 const labelClassName = "grid gap-2 text-sm font-medium text-slate-700";
 
+const listingStatusLabels = {
+  active: "Active",
+  sold_out: "Sold out",
+  expired: "Expired",
+  removed: "Removed",
+} as const;
+
+const listingStatusStyles = {
+  active: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  sold_out: "border-amber-200 bg-amber-50 text-amber-900",
+  expired: "border-slate-300 bg-slate-100 text-slate-800",
+  removed: "border-red-200 bg-red-50 text-red-900",
+} as const;
+
 export default async function DashboardListingsPage({
   searchParams,
 }: {
@@ -165,46 +179,57 @@ export default async function DashboardListingsPage({
           <h2 className="text-xl font-semibold tracking-tight text-emerald-950">Current listings</h2>
           {listings && listings.length > 0 ? (
             <ul className="mt-5 grid gap-4">
-              {listings.map((listing) => (
-                <li key={listing.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-semibold text-emerald-950">{listing.item_name}</h3>
-                        <span className="inline-flex items-center rounded-full border border-emerald-900/15 bg-white px-2.5 py-1 text-xs font-medium uppercase tracking-[0.12em] text-emerald-800">{listing.status}</span>
+              {listings.map((listing) => {
+                const expiryHasPassed =
+                  listing.expiry_date !== null &&
+                  listing.expiry_date < new Date().toISOString().slice(0, 10);
+                const displayStatus =
+                  expiryHasPassed &&
+                  (listing.status === "active" || listing.status === "sold_out")
+                    ? "expired"
+                    : listing.status;
+
+                return (
+                  <li key={listing.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-lg font-semibold text-emerald-950">{listing.item_name}</h3>
+                          <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${listingStatusStyles[displayStatus]}`}>{listingStatusLabels[displayStatus]}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-slate-600">{listing.quantity} {listing.unit}</p>
+                        {listing.category ? <p className="mt-1 text-sm text-slate-600">Category: {listing.category}</p> : null}
+                        {listing.description ? <p className="mt-2 text-sm leading-6 text-slate-700">{listing.description}</p> : null}
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                          {listing.price !== null && listing.price !== undefined ? <span>Price: {Number(listing.price).toFixed(2)}</span> : null}
+                          {listing.expiry_date ? <span>Expiry: {new Date(listing.expiry_date).toLocaleDateString()}</span> : null}
+                        </div>
                       </div>
-                      <p className="mt-2 text-sm text-slate-600">{listing.quantity} {listing.unit}</p>
-                      {listing.category ? <p className="mt-1 text-sm text-slate-600">Category: {listing.category}</p> : null}
-                      {listing.description ? <p className="mt-2 text-sm leading-6 text-slate-700">{listing.description}</p> : null}
-                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
-                        {listing.price !== null && listing.price !== undefined ? <span>Price: {Number(listing.price).toFixed(2)}</span> : null}
-                        {listing.expiry_date ? <span>Expiry: {new Date(listing.expiry_date).toLocaleDateString()}</span> : null}
+
+                      <div className="flex flex-col gap-2 sm:min-w-40">
+                        <form action={updateListingAction} className="grid gap-2">
+                          <input type="hidden" name="listingId" value={listing.id} />
+                          <label className="grid gap-2 text-sm font-medium text-slate-700">
+                            Status
+                            <select className={inputClassName} name="status" defaultValue={displayStatus}>
+                              <option value="active" disabled={expiryHasPassed}>Active</option>
+                              <option value="sold_out" disabled={expiryHasPassed}>Sold out</option>
+                              <option value="expired">Expired</option>
+                              <option value="removed">Removed</option>
+                            </select>
+                          </label>
+                          <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-full border border-emerald-900/20 px-4 text-sm font-semibold text-emerald-950 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">Save status</button>
+                        </form>
+
+                        <form action={removeListingAction}>
+                          <input type="hidden" name="listingId" value={listing.id} />
+                          <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-800 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700">Remove</button>
+                        </form>
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-2 sm:min-w-40">
-                      <form action={updateListingAction} className="grid gap-2">
-                        <input type="hidden" name="listingId" value={listing.id} />
-                        <label className="grid gap-2 text-sm font-medium text-slate-700">
-                          Status
-                          <select className={inputClassName} name="status" defaultValue={listing.status}>
-                            <option value="active">Active</option>
-                            <option value="sold_out">Sold out</option>
-                            <option value="expired">Expired</option>
-                            <option value="removed">Removed</option>
-                          </select>
-                        </label>
-                        <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-full border border-emerald-900/20 px-4 text-sm font-semibold text-emerald-950 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">Save status</button>
-                      </form>
-
-                      <form action={removeListingAction}>
-                        <input type="hidden" name="listingId" value={listing.id} />
-                        <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-800 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700">Remove</button>
-                      </form>
-                    </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <div className="mt-5 rounded-2xl border border-dashed border-emerald-900/20 bg-[#f8f9f5] px-5 py-8 text-sm text-slate-600">

@@ -28,14 +28,32 @@ export const listingFormSchema = z.object({
     .trim()
     .optional()
     .transform((value) => (value === "" ? undefined : value))
-    .refine(
-      (value) => value === undefined || /^\d{4}-\d{2}-\d{2}$/.test(value),
-      "Use a valid expiry date in YYYY-MM-DD format.",
-    ),
+    .refine((value) => {
+      if (value === undefined) {
+        return true;
+      }
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return false;
+      }
+
+      const date = new Date(`${value}T00:00:00.000Z`);
+      return (
+        Number.isFinite(date.getTime()) &&
+        date.toISOString().slice(0, 10) === value
+      );
+    }, "Use a valid expiry date in YYYY-MM-DD format."),
   status: z
     .enum(["active", "sold_out", "expired", "removed"])
     .optional(),
 });
+
+export const listingStatusUpdateSchema = z.object({
+  listingId: z.uuid(),
+  status: z.enum(["active", "sold_out", "expired", "removed"]),
+});
+
+export const listingIdSchema = z.uuid();
 
 export function getFirstValidationError(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Check the listing details and try again.";
