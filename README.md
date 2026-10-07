@@ -166,3 +166,9 @@ currently sold-out item. The database limits a contact to five requests per
 24-hour period and prevents duplicate requests for the same item in that
 period. Request details are not public or visible to shop owners; they are
 available only to authorized admins. No notification is sent automatically.
+
+Business metrics are available to authenticated shop owners for only their own
+shop and to admins as aggregates. Phone/WhatsApp contact metrics count recorded
+clicks on contact links, not completed conversations. Shops may optionally
+report an estimated money-saved amount in INR when marking a listing sold out;
+these amounts are self-reported and not independently verified.

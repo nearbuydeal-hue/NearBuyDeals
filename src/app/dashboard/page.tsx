@@ -2,10 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogoutForm } from "@/components/auth/LogoutForm";
+import { MetricCard } from "@/components/metrics/MetricCard";
 import {
   createSupabaseServerClient,
   hasSupabaseServerConfig,
 } from "@/lib/supabase/server";
+import {
+  metricsPeriodSchema,
+  shopMetricsSchema,
+  type MetricsPeriod,
+} from "@/lib/validation/metrics";
 
 export const metadata: Metadata = {
   title: "Shop dashboard | NearbyDeals",
@@ -22,7 +28,7 @@ const approvalMessages = {
   approved: {
     title: "Your shop is approved",
     description:
-      "Your shop has been approved. Listing tools are not available yet.",
+      "Your shop has been approved. You can manage listings and review customer activity.",
     className: "border-emerald-200 bg-emerald-50 text-emerald-950",
   },
   rejected: {
@@ -49,11 +55,18 @@ function isApprovalStatus(
   return Object.hasOwn(approvalMessages, status);
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
   if (!hasSupabaseServerConfig()) {
     return <DashboardNotConfigured />;
   }
 
+  const params = await searchParams;
+  const periodResult = metricsPeriodSchema.safeParse(params.period);
+  const period: MetricsPeriod = periodResult.success ? periodResult.data : "all";
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
@@ -111,6 +124,20 @@ export default async function DashboardPage() {
     return <DashboardError />;
   }
 
+  const { data: rawMetrics, error: metricsError } = await supabase.rpc(
+    "get_my_shop_metrics",
+    { _period: period },
+  );
+  const parsedMetrics = metricsError
+    ? null
+    : shopMetricsSchema.safeParse(rawMetrics);
+
+  if (metricsError) {
+    console.error("Shop metrics query failed:", metricsError.code);
+  } else if (!parsedMetrics?.success) {
+    console.error("Shop metrics response had an unexpected shape.");
+  }
+
   const status = approvalMessages[shop.approval_status];
 
   return (
@@ -142,6 +169,81 @@ export default async function DashboardPage() {
             {status.title}
           </h2>
           <p className="mt-2 text-sm leading-6">{status.description}</p>
+        </section>
+
+        <section
+          aria-labelledby="shop-metrics-heading"
+          className="mt-6 rounded-3xl border border-emerald-950/10 bg-[#f8f9f5] p-5 sm:p-8"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
+                Shop activity
+              </p>
+              <h2
+                id="shop-metrics-heading"
+                className="mt-2 text-2xl font-semibold tracking-tight text-emerald-950"
+              >
+                Your metrics
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Counts are based on listing and contact activity.
+              </p>
+            </div>
+            <form method="get" className="flex flex-wrap items-end gap-2">
+              <label className="grid gap-1 text-sm font-medium text-slate-700">
+                Time period
+                <select
+                  name="period"
+                  defaultValue={period}
+                  className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+                >
+                  <option value="7d">Last 7 days</option>
+                  <option value="30d">Last 30 days</option>
+                  <option value="all">All time</option>
+                </select>
+              </label>
+              <button
+                type="submit"
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-emerald-900/20 px-4 text-sm font-semibold text-emerald-950 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+              >
+                Apply
+              </button>
+            </form>
+          </div>
+
+          {parsedMetrics?.success ? (
+            <>
+              <ul className="mt-5 grid list-none gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <MetricCard label="Total listings" value={parsedMetrics.data.totalListings} />
+                <MetricCard label="Active listings" value={parsedMetrics.data.activeListings} />
+                <MetricCard label="Sold-out listings" value={parsedMetrics.data.soldOutListings} />
+                <MetricCard label="Expired listings" value={parsedMetrics.data.expiredListings} />
+                <MetricCard label="Customer contacts" value={parsedMetrics.data.customerContacts} />
+                <MetricCard label="Phone contacts" value={parsedMetrics.data.phoneContacts} />
+                <MetricCard label="WhatsApp contacts" value={parsedMetrics.data.whatsappContacts} />
+                <MetricCard label="Notify-me requests" value={parsedMetrics.data.notifyRequests} />
+                <MetricCard
+                  label="Reported money saved"
+                  value={formatINR(parsedMetrics.data.reportedMoneySaved)}
+                  detail="Optional amount reported by your shop; not independently verified."
+                />
+              </ul>
+              <p className="mt-3 text-xs text-slate-600">
+                Customer contacts count clicks on phone or WhatsApp contact links. Sold-out counts listings marked sold by your shop.
+              </p>
+            </>
+          ) : (
+            <p role="status" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+              Metrics are temporarily unavailable. Your shop and listings are unaffected.
+            </p>
+          )}
+          <Link
+            href="/dashboard/listings"
+            className="mt-5 inline-flex min-h-11 items-center rounded-full border border-emerald-900/20 px-5 text-sm font-semibold text-emerald-950 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+          >
+            Manage listings
+          </Link>
         </section>
 
         <section
@@ -199,6 +301,14 @@ export default async function DashboardPage() {
       </div>
     </main>
   );
+}
+
+function formatINR(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
 function Detail({ label, value }: { label: string; value: string }) {

@@ -16,6 +16,13 @@ export type ListingStatus = "active" | "sold_out" | "expired" | "removed";
 export type NotifyContactMethod = "phone" | "whatsapp" | "email";
 export type NotifyRequestStatus = "pending" | "fulfilled" | "cancelled";
 export type ShopContactType = "phone" | "whatsapp";
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export type Database = {
   public: {
@@ -110,6 +117,8 @@ export type Database = {
           unit: string;
           price: number | null;
           expiry_date: string | null;
+          sold_out_at: string | null;
+          reported_money_saved: number | null;
           status: ListingStatus;
           created_at: string;
           updated_at: string;
@@ -124,6 +133,8 @@ export type Database = {
           unit?: string;
           price?: number | null;
           expiry_date?: string | null;
+          sold_out_at?: string | null;
+          reported_money_saved?: number | null;
           status?: ListingStatus;
           created_at?: string;
           updated_at?: string;
@@ -138,6 +149,8 @@ export type Database = {
           unit?: string;
           price?: number | null;
           expiry_date?: string | null;
+          sold_out_at?: string | null;
+          reported_money_saved?: number | null;
           status?: ListingStatus;
           created_at?: string;
           updated_at?: string;
@@ -249,6 +262,14 @@ export type Database = {
           _contact_value: string;
         };
         Returns: undefined;
+      };
+      get_my_shop_metrics: {
+        Args: { _period: "7d" | "30d" | "all" };
+        Returns: Json;
+      };
+      get_admin_metrics: {
+        Args: { _period: "7d" | "30d" | "all" };
+        Returns: Json;
       };
     };
     Enums: {

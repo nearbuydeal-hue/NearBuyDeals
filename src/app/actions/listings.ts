@@ -104,6 +104,7 @@ export async function updateListingAction(formData: FormData) {
   const parsed = listingStatusUpdateSchema.safeParse({
     listingId: formData.get("listingId"),
     status: formData.get("status"),
+    reportedMoneySaved: formData.get("reportedMoneySaved") ?? "",
   });
   if (!parsed.success) {
     redirect(`/dashboard/listings?error=${encodeURIComponent(getFirstValidationError(parsed.error))}`);
@@ -126,15 +127,29 @@ export async function updateListingAction(formData: FormData) {
     redirect("/dashboard/listings?error=access");
   }
 
+  const hasPastExpiry =
+    listing.expiry_date !== null &&
+    listing.expiry_date < new Date().toISOString().slice(0, 10);
+  const nextStatus =
+    hasPastExpiry &&
+    (parsed.data.status === "active" || parsed.data.status === "sold_out")
+      ? "expired"
+      : parsed.data.status;
+
+  if (
+    parsed.data.reportedMoneySaved !== undefined &&
+    nextStatus !== "sold_out"
+  ) {
+    redirect("/dashboard/listings?error=invalid");
+  }
+
   const { error } = await supabase
     .from("listings")
     .update({
-      status:
-        parsed.data.status === "active" &&
-        listing.expiry_date !== null &&
-        listing.expiry_date < new Date().toISOString().slice(0, 10)
-          ? "expired"
-          : parsed.data.status,
+      status: nextStatus,
+      ...(parsed.data.reportedMoneySaved !== undefined
+        ? { reported_money_saved: parsed.data.reportedMoneySaved }
+        : {}),
     })
     .eq("id", parsed.data.listingId)
     .eq("shop_id", shop.id);

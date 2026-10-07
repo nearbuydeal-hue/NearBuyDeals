@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShopActionForm } from "@/components/admin/AdminShopActionForm";
 import {
@@ -105,12 +106,22 @@ export default async function AdminShopsPage({
       className="flex-1 bg-[#f5f7ef] px-5 py-10 sm:px-8 sm:py-16"
     >
       <div className="mx-auto max-w-5xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
-          Administration
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-emerald-950 sm:text-4xl">
-          Shop approvals
-        </h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
+              Administration
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-emerald-950 sm:text-4xl">
+              Shop approvals
+            </h1>
+          </div>
+          <Link
+            href="/admin/metrics"
+            className="inline-flex min-h-11 items-center rounded-full border border-emerald-900/20 px-5 text-sm font-semibold text-emerald-950 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+          >
+            Business metrics
+          </Link>
+        </div>
 
         {success && ["approved", "rejected", "suspended"].includes(success) ? (
           <p

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NotifyAvailabilityForm } from "@/components/listings/NotifyAvailabilityForm";
+import { TrackedContactLinks } from "@/components/listings/TrackedContactLinks";
 import {
   createSupabaseServerClient,
   hasSupabaseServerConfig,
@@ -129,12 +130,12 @@ export default async function ListingsPage() {
                   <div className="mt-5 border-t border-slate-100 pt-4 text-sm text-slate-600">
                     <p className="font-medium text-slate-900">{shop.address}</p>
                     <p>{shop.area}, {shop.city}</p>
-                    <div className="mt-3 flex flex-wrap gap-3">
-                      <a href={`tel:${shop.phone}`} className="inline-flex min-h-11 items-center rounded-full border border-emerald-900/20 px-4 text-sm font-semibold text-emerald-950 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">Call shop</a>
-                      {shop.whatsapp ? (
-                        <a href={`https://wa.me/${shop.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-full bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">WhatsApp</a>
-                      ) : null}
-                    </div>
+                    <TrackedContactLinks
+                      shopId={shop.id}
+                      listingId={listing.id}
+                      phone={shop.phone}
+                      whatsapp={shop.whatsapp}
+                    />
                   </div>
                 </li>
               );

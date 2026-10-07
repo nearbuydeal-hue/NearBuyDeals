@@ -77,7 +77,7 @@ export default async function DashboardListingsPage({
 
   const { data: listings, error: listingsError } = await supabase
     .from("listings")
-    .select("id, item_name, description, category, quantity, unit, price, expiry_date, status, created_at")
+    .select("id, item_name, description, category, quantity, unit, price, expiry_date, status, created_at, sold_out_at, reported_money_saved")
     .eq("shop_id", shop.id)
     .order("created_at", { ascending: false });
 
@@ -203,6 +203,7 @@ export default async function DashboardListingsPage({
                         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
                           {listing.price !== null && listing.price !== undefined ? <span>Price: {Number(listing.price).toFixed(2)}</span> : null}
                           {listing.expiry_date ? <span>Expiry: {new Date(listing.expiry_date).toLocaleDateString()}</span> : null}
+                          {listing.reported_money_saved !== null ? <span>Reported savings: {Number(listing.reported_money_saved).toLocaleString("en-IN", { style: "currency", currency: "INR" })}</span> : null}
                         </div>
                       </div>
 
@@ -217,6 +218,19 @@ export default async function DashboardListingsPage({
                               <option value="expired">Expired</option>
                               <option value="removed">Removed</option>
                             </select>
+                          </label>
+                          <label className="grid gap-2 text-sm font-medium text-slate-700">
+                            Reported money saved (INR, optional)
+                            <input
+                              className={inputClassName}
+                              name="reportedMoneySaved"
+                              type="number"
+                              min="0"
+                              max="9999999999.99"
+                              step="0.01"
+                              defaultValue={displayStatus === "sold_out" ? listing.reported_money_saved ?? "" : ""}
+                              placeholder="Only when marking sold out"
+                            />
                           </label>
                           <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-full border border-emerald-900/20 px-4 text-sm font-semibold text-emerald-950 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">Save status</button>
                         </form>

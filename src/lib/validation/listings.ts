@@ -48,10 +48,28 @@ export const listingFormSchema = z.object({
     .optional(),
 });
 
-export const listingStatusUpdateSchema = z.object({
-  listingId: z.uuid(),
-  status: z.enum(["active", "sold_out", "expired", "removed"]),
-});
+export const listingStatusUpdateSchema = z
+  .object({
+    listingId: z.uuid(),
+    status: z.enum(["active", "sold_out", "expired", "removed"]),
+    reportedMoneySaved: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.coerce
+        .number()
+        .min(0, "Reported savings cannot be negative.")
+        .max(9999999999.99, "Enter an amount below ₹10,000,000,000.")
+        .optional(),
+    ),
+  })
+  .superRefine((value, context) => {
+    if (value.reportedMoneySaved !== undefined && value.status !== "sold_out") {
+      context.addIssue({
+        code: "custom",
+        path: ["reportedMoneySaved"],
+        message: "Reported savings can only be entered when marking a listing sold out.",
+      });
+    }
+  });
 
 export const listingIdSchema = z.uuid();
 
