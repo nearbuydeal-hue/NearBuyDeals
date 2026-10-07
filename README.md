@@ -49,7 +49,9 @@ For the Next.js app, copy `.env.example` to `.env.local` and set `SITE_URL`,
 `SITE_URL` is the app's canonical origin used for email confirmation and
 Google OAuth redirects. It must match the origin where the local app is
 actually running (for example, `http://127.0.0.1:3001`). Never put a
-service-role key in this file.
+service-role key in this file. For production, configure the public HTTPS
+origin before building/deploying; this value is also used for canonical
+metadata, robots, and sitemap URLs.
 
 The deployed Vercel project also needs `SUPABASE_SERVICE_ROLE_KEY` and
 `CRON_SECRET` configured as server-only environment variables for the daily
@@ -156,9 +158,10 @@ ORDER BY tablename, policyname;
 Contact-intent rows deliberately store no customer identity or contact
 details. Anonymous clients can insert an event only for an approved shop (and,
 when supplied, an active listing); they cannot read, change, or delete events.
-This insert-only endpoint can still be abused to inflate counts, so add
-server-side validation and rate limiting before using these events for
-decisions.
+Contact event counts are operational signals only: this endpoint can still be
+abused to inflate counts and cannot prove a completed call or conversation.
+The public listings page caps each response at 100 rows; full pagination or
+search is a separate future improvement.
 
 Availability requests are separate from contact-intent rows. Anonymous
 customers can submit an email or WhatsApp contact for an approved shop's
@@ -172,3 +175,29 @@ shop and to admins as aggregates. Phone/WhatsApp contact metrics count recorded
 clicks on contact links, not completed conversations. Shops may optionally
 report an estimated money-saved amount in INR when marking a listing sold out;
 these amounts are self-reported and not independently verified.
+
+## Production pilot checklist
+
+- Replace all bracketed placeholders in the Privacy Policy and Terms with
+  operator-approved details. These pages are not legal advice; obtain
+  jurisdiction-specific legal review before launch.
+- Pharmacy availability requires local legal/regulatory review. NearbyDeals
+  approval is not a regulatory authorization. Medicine sales, medicine
+  payments, medicine delivery, and prescription processing are out of scope.
+- Configure Supabase Auth provider rate limits and abuse controls in the
+  Supabase project before accepting public signups. Authentication is handled
+  by Supabase Auth; the application does not add a separate durable
+  per-IP limiter.
+- Notify-me requests have database-backed limits of five requests per
+  contact per 24 hours and one same-listing request per contact in that
+  period. Contact-click tracking has no reliable distributed per-IP rate
+  limit and can be forged; do not treat those counts as audited demand.
+- TODO before broader production use: add a durable shared rate limiter for
+  public contact-event writes and other public actions, using trusted request
+  identity from the hosting layer. Do not replace this with process-local
+  memory limiting on serverless instances.
+- Configure a retention and deletion schedule for account data, listings,
+  contact events, and notify-me contact values. The current application does
+  not enforce an automatic retention schedule.
+- Next.js writes safe error digests to the hosting runtime log for
+  troubleshooting. No external error-monitoring provider is configured.

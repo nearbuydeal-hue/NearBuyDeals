@@ -16,6 +16,7 @@ import {
 export const metadata: Metadata = {
   title: "Business metrics | NearbyDeals",
   description: "Review aggregate marketplace activity metrics.",
+  robots: { index: false, follow: false },
 };
 
 type AdminMetricsPageProps = {

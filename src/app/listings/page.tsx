@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { NotifyAvailabilityForm } from "@/components/listings/NotifyAvailabilityForm";
 import { TrackedContactLinks } from "@/components/listings/TrackedContactLinks";
 import {
@@ -7,6 +8,18 @@ import {
 } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Available local shop listings | NearbyDeals",
+  description:
+    "Browse availability information shared by local shops and contact them directly.",
+  alternates: { canonical: "/listings" },
+  openGraph: {
+    title: "Available local shop listings | NearbyDeals",
+    description:
+      "Browse availability information shared by local shops and contact them directly.",
+  },
+};
 
 export default async function ListingsPage() {
   if (!hasSupabaseServerConfig()) {
@@ -28,7 +41,8 @@ export default async function ListingsPage() {
     )
     .in("status", ["active", "sold_out"])
     .or(`expiry_date.is.null,expiry_date.gte.${new Date().toISOString().slice(0, 10)}`)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   if (error) {
     console.error("Public listings query failed:", error.code);

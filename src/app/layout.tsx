@@ -1,18 +1,33 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: getSiteUrl(),
   title: "NearbyDeals — Find Products Near You",
   description:
     "Find available products from local shops near you and contact the shop directly.",
+  openGraph: {
+    type: "website",
+    siteName: "NearbyDeals",
+    title: "NearbyDeals — Find Products Near You",
+    description:
+      "Find available products from local shops near you and contact the shop directly.",
+  },
+  twitter: {
+    card: "summary",
+    title: "NearbyDeals — Find Products Near You",
+    description:
+      "Find available products from local shops near you and contact the shop directly.",
+  },
 };
 
 const footerLinks = [
-  { label: "Privacy", id: "privacy-coming-soon" },
-  { label: "Terms", id: "terms-coming-soon" },
-  { label: "Contact", id: "contact-coming-soon" },
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+  { label: "Contact details pending", href: "/privacy#contact" },
 ];
 
 export default function RootLayout({
@@ -35,6 +50,7 @@ export default function RootLayout({
               href="/"
               aria-label="NearbyDeals home"
               className="inline-flex min-h-12 items-center gap-2 rounded-md text-lg font-bold tracking-tight text-emerald-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
+              translate="no"
             >
               <span
                 aria-hidden="true"
@@ -94,14 +110,13 @@ export default function RootLayout({
             <nav aria-label="Footer navigation">
               <ul className="flex flex-wrap gap-x-2 gap-y-1">
                 {footerLinks.map((link) => (
-                  <li key={link.id}>
-                    <a
-                      id={link.id}
-                      href={`#${link.id}`}
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
                       className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm text-emerald-100 underline decoration-emerald-400/60 underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
-                      {link.label} (coming soon)
-                    </a>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

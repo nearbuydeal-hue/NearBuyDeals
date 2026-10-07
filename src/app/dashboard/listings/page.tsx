@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import {
   createSupabaseServerClient,
@@ -9,6 +10,12 @@ import {
   removeListingAction,
   updateListingAction,
 } from "@/app/actions/listings";
+
+export const metadata: Metadata = {
+  title: "Manage listings | NearbyDeals",
+  description: "Manage availability information for your shop.",
+  robots: { index: false, follow: false },
+};
 
 const inputClassName =
   "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-900 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800";

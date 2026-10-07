@@ -14,6 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "Shop approvals | NearbyDeals",
   description: "Review shop applications and approval status.",
+  robots: { index: false, follow: false },
 };
 
 type ShopsPageProps = {
@@ -122,6 +123,21 @@ export default async function AdminShopsPage({
             Business metrics
           </Link>
         </div>
+
+        <aside
+          aria-labelledby="pharmacy-review-heading"
+          className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950"
+        >
+          <h2 id="pharmacy-review-heading" className="font-semibold">
+            Pharmacy listings require local legal review
+          </h2>
+          <p className="mt-1">
+            Approval in NearbyDeals is not regulatory approval. Do not approve
+            or treat pharmacy listings as medicine sales, payments, delivery,
+            or prescription processing. Obtain qualified local legal and
+            regulatory guidance before enabling pharmacy use.
+          </p>
+        </aside>
 
         {success && ["approved", "rejected", "suspended"].includes(success) ? (
           <p

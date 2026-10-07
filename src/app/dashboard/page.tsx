@@ -16,6 +16,7 @@ import {
 export const metadata: Metadata = {
   title: "Shop dashboard | NearbyDeals",
   description: "View your shop information and approval status.",
+  robots: { index: false, follow: false },
 };
 
 const approvalMessages = {

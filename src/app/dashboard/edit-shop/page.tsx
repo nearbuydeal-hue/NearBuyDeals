@@ -10,6 +10,7 @@ import {
 export const metadata: Metadata = {
   title: "Edit shop information | NearbyDeals",
   description: "Update your shop contact and location information.",
+  robots: { index: false, follow: false },
 };
 
 export default async function EditShopPage() {

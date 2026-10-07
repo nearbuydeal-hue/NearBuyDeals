@@ -5,6 +5,7 @@ import { SignupForm } from "@/components/auth/SignupForm";
 export const metadata: Metadata = {
   title: "Shop owner sign up | NearbyDeals",
   description: "Create a NearbyDeals shop-owner account for the free beta.",
+  robots: { index: false, follow: false },
 };
 
 type SignupPageProps = {

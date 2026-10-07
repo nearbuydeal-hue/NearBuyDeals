@@ -9,6 +9,7 @@ import {
 export const metadata: Metadata = {
   title: "Complete shop setup | NearbyDeals",
   description: "Add your shop details to finish creating your account.",
+  robots: { index: false, follow: false },
 };
 
 export default async function CompleteSignupPage() {

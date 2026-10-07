@@ -5,6 +5,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 export const metadata: Metadata = {
   title: "Shop owner login | NearbyDeals",
   description: "Log in to your NearbyDeals shop-owner account.",
+  robots: { index: false, follow: false },
 };
 
 type LoginPageProps = {
