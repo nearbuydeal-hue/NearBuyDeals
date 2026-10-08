@@ -91,6 +91,25 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    await supabase.auth.signOut();
+    console.error(
+      "Could not verify account after authentication callback:",
+      profileError?.code,
+    );
+    return redirectWithCookies(siteOrigin, "/login?error=oauth", cookiesToSet);
+  }
+
+  if (profile.role === "admin") {
+    return redirectWithCookies(siteOrigin, "/admin/shops", cookiesToSet);
+  }
+
   const onboarding = await finishOnboardingFromMetadata(data.user, supabase);
   if (onboarding.error) {
     await supabase.auth.signOut();
@@ -103,21 +122,6 @@ export async function GET(request: NextRequest) {
   }
 
   if (!onboarding.completed) {
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .maybeSingle();
-
-    if (profileError || !profile) {
-      await supabase.auth.signOut();
-      console.error(
-        "Could not verify account after authentication callback:",
-        profileError?.code,
-      );
-      return redirectWithCookies(siteOrigin, "/login?error=oauth", cookiesToSet);
-    }
-
     if (profile.role === "customer") {
       return redirectWithCookies(
         siteOrigin,

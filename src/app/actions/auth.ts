@@ -214,6 +214,22 @@ export async function loginAction(
     return { error: "Email or password is incorrect. Try again." };
   }
 
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    console.error("Could not verify the signed-in profile:", profileError?.code);
+    await supabase.auth.signOut();
+    return { error: "We couldn’t verify this account. Try again later." };
+  }
+
+  if (profile.role === "admin") {
+    redirect("/admin/shops");
+  }
+
   const onboarding = await finishOnboardingFromMetadata(data.user, supabase);
   if (onboarding.error) {
     await supabase.auth.signOut();
@@ -221,18 +237,6 @@ export async function loginAction(
   }
 
   if (!onboarding.completed) {
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error("Could not verify the signed-in profile:", profileError.code);
-      await supabase.auth.signOut();
-      return { error: "We couldn’t verify this account. Try again later." };
-    }
-
     if (profile?.role !== "shop_owner") {
       await supabase.auth.signOut();
       return {

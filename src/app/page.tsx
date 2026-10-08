@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { searchListingsAction } from "@/app/actions/public-search";
 
 const steps = [
   {
@@ -35,7 +36,7 @@ export default function Home() {
                 aria-hidden="true"
                 className="size-2 rounded-full bg-emerald-600"
               />
-              Your neighbourhood, a little closer
+              Month 1 beta · for local customers and shops
             </p>
             <h1
               id="hero-title"
@@ -44,37 +45,51 @@ export default function Home() {
               Find available products from local shops near you.
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-8 text-slate-600">
-              Discover what nearby shops have available, then contact them
-              directly.
+              Find availability information shared by local pharmacies,
+              grocery stores, and restaurants. Customers contact shops
+              directly to confirm stock.
             </p>
-            <Link
-              href="/signup"
-              className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-800 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
-            >
-              List your shop
-            </Link>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/signup"
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-800 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
+              >
+                List your shop
+              </Link>
+              <Link
+                href="/listings"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-emerald-900/20 px-6 py-3 text-base font-semibold text-emerald-950 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
+              >
+                Browse listings
+              </Link>
+            </div>
           </div>
 
-          <div
-            aria-label="Search preview"
+          <section
+            aria-labelledby="search-preview-title"
             className="rounded-3xl border border-emerald-950/10 bg-white p-5 shadow-[0_20px_60px_-40px_rgba(6,78,59,0.4)] sm:p-7"
           >
             <div className="mb-6">
               <p className="text-sm font-semibold text-emerald-800">
                 NEARBYDEALS
               </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight text-emerald-950">
+              <h2
+                id="search-preview-title"
+                className="mt-2 text-xl font-semibold tracking-tight text-emerald-950"
+              >
                 What are you looking for?
               </h2>
             </div>
-            <div className="grid gap-4">
+            <form action={searchListingsAction} className="grid gap-4">
               <label className="grid gap-2 text-sm font-medium text-slate-700">
                 Product
                 <input
                   type="search"
                   placeholder="e.g. Search by item name"
-                  disabled
-                  className="min-h-12 rounded-xl border border-slate-200 bg-slate-50 px-4 text-base text-slate-700 placeholder:text-slate-400 disabled:cursor-not-allowed"
+                  name="q"
+                  maxLength={80}
+                  autoComplete="off"
+                  className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 text-base text-slate-700 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-slate-700">
@@ -82,53 +97,75 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="e.g. Your neighbourhood"
-                  disabled
-                  className="min-h-12 rounded-xl border border-slate-200 bg-slate-50 px-4 text-base text-slate-700 placeholder:text-slate-400 disabled:cursor-not-allowed"
+                  name="area"
+                  maxLength={80}
+                  autoComplete="address-level3"
+                  className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 text-base text-slate-700 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
                 />
               </label>
               <button
-                type="button"
-                disabled
-                className="min-h-12 cursor-not-allowed rounded-xl bg-emerald-800 px-5 text-base font-semibold text-white/80"
+                type="submit"
+                className="min-h-12 rounded-xl bg-emerald-800 px-5 text-base font-semibold text-white hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
               >
-                Search coming soon
+                Search listings
               </button>
-            </div>
+            </form>
             <p className="mt-4 text-sm leading-6 text-slate-500">
-              Search is not available yet. We&apos;re preparing the beta.
+              Browse listings without creating an account. Contact the shop
+              directly to confirm availability.
             </p>
-          </div>
+          </section>
         </div>
       </section>
 
       <section
         id="search"
-        aria-labelledby="shops-title"
+        aria-labelledby="customer-search-title"
         className="mx-auto max-w-6xl scroll-mt-8 px-5 py-16 sm:px-8 sm:py-20"
       >
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
-            Made for nearby
+            For local customers
           </p>
           <h2
-            id="shops-title"
+            id="customer-search-title"
             className="mt-3 text-3xl font-semibold tracking-tight text-emerald-950 sm:text-4xl"
           >
-            Browse nearby shops
+            Search stock from nearby shops
           </h2>
           <p className="mt-4 text-base leading-7 text-slate-600">
-            This space will help you discover local shops and the products
-            they choose to share.
+            Search by item and area, review shop-provided availability, then
+            call or message the shop directly. No customer account is needed.
           </p>
         </div>
-        <div className="mt-8 rounded-2xl border border-dashed border-emerald-900/20 bg-[#f8f9f5] px-5 py-8 sm:px-8 sm:py-10">
-          <p className="font-medium text-emerald-950">
-            Shop listings will appear here when the beta is ready.
+        <Link
+          href="/listings"
+          className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full border border-emerald-900/20 px-6 py-3 text-base font-semibold text-emerald-950 hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-800"
+        >
+          Browse all listings
+        </Link>
+        <section
+          aria-labelledby="shops-signup-heading"
+          className="mt-10 rounded-2xl border border-emerald-950/10 bg-[#f8f9f5] px-5 py-6 sm:px-8"
+        >
+          <h3
+            id="shops-signup-heading"
+            className="text-lg font-semibold text-emerald-950"
+          >
+            For local shops
+          </h3>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+            Create a shop account, submit your details for review, and share
+            stock information after approval. Customers contact you directly.
+            NearbyDeals is in beta; it does not process purchases or delivery.
           </p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            No shop listings are available yet.
-          </p>
-        </div>
+          <Link
+            href="/signup"
+            className="mt-4 inline-flex min-h-11 items-center rounded-md font-semibold text-emerald-800 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+          >
+            Sign up your shop
+          </Link>
+        </section>
       </section>
 
       <section

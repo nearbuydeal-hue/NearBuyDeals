@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
@@ -8,15 +8,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function matchesCronSecret(request: Request, secret: string) {
-  const authorization = Buffer.from(
-    request.headers.get("authorization") ?? "",
-  );
-  const expected = Buffer.from(`Bearer ${secret}`);
+  const authorization = request.headers.get("authorization") ?? "";
+  const expected = "Bearer " + secret;
+  const authorizationBuffer = Buffer.from(authorization);
+  const expectedBuffer = Buffer.from(expected);
 
-  return (
-    authorization.length === expected.length &&
-    timingSafeEqual(authorization, expected)
-  );
+  if (authorizationBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(authorizationBuffer, expectedBuffer);
 }
 
 export async function GET(request: Request) {

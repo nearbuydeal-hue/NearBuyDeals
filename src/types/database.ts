@@ -211,6 +211,20 @@ export type Database = {
           created_at?: string;
         }
       >;
+      search_events: Table<
+        {
+          id: string;
+          created_at: string;
+        },
+        {
+          id?: string;
+          created_at?: string;
+        },
+        {
+          id?: string;
+          created_at?: string;
+        }
+      >;
     };
     Views: Record<string, never>;
     Functions: {
@@ -270,6 +284,14 @@ export type Database = {
       get_admin_metrics: {
         Args: { _period: "7d" | "30d" | "all" };
         Returns: Json;
+      };
+      record_public_search: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      get_admin_search_count: {
+        Args: { _period: "7d" | "30d" | "all" };
+        Returns: number;
       };
     };
     Enums: {

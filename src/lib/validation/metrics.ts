@@ -53,6 +53,7 @@ export const adminMetricsSchema = z.object({
     whatsappContacts: metricCount,
     totalContacts: metricCount,
     notifyRequests: metricCount,
+    searches: metricCount,
   }),
   outcomes: z.object({
     listingsMarkedSold: metricCount,

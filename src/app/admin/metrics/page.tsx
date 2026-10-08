@@ -78,6 +78,15 @@ export default async function AdminMetricsPage({
     return <MetricsUnavailable />;
   }
 
+  const { data: searches, error: searchesError } = await supabase.rpc(
+    "get_admin_search_count",
+    { _period: period },
+  );
+  if (searchesError || searches === null) {
+    console.error("Admin search metric query failed:", searchesError?.code);
+    return <MetricsUnavailable />;
+  }
+
   const metrics = parsedMetrics.data;
 
   return (
@@ -160,6 +169,11 @@ export default async function AdminMetricsPage({
           <MetricCard
             label="Notify-me requests"
             value={metrics.customerDemand.notifyRequests}
+          />
+          <MetricCard
+            label="Search submissions"
+            value={searches}
+            detail="Counts searches with an item or area entered; no search terms are stored."
           />
         </MetricSection>
 

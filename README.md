@@ -53,6 +53,10 @@ service-role key in this file. For production, configure the public HTTPS
 origin before building/deploying; this value is also used for canonical
 metadata, robots, and sitemap URLs.
 
+After pulling schema changes, apply pending migrations with `supabase db push`
+before deploying. The beta search-count migration adds timestamp-only search
+events and an admin-only aggregate; it does not store customer search terms.
+
 The deployed Vercel project also needs `SUPABASE_SERVICE_ROLE_KEY` and
 `CRON_SECRET` configured as server-only environment variables for the daily
 listing-expiry cron. The cron endpoint is protected by `CRON_SECRET`; do not
@@ -162,6 +166,11 @@ Contact event counts are operational signals only: this endpoint can still be
 abused to inflate counts and cannot prove a completed call or conversation.
 The public listings page caps each response at 100 rows; full pagination or
 search is a separate future improvement.
+
+Search submissions with a product or area are counted for aggregate beta
+metrics. Only a timestamp is stored; search terms and area values are not.
+Search counts, like contact-click counts, are directional and can be inflated
+by repeated or automated requests.
 
 Availability requests are separate from contact-intent rows. Anonymous
 customers can submit an email or WhatsApp contact for an approved shop's

@@ -59,6 +59,12 @@ const sections = [
             a call or conversation took place.
           </li>
           <li>
+            <strong>Search activity:</strong> when a customer submits a search
+            with an item or area, we store only its timestamp for aggregate
+            beta metrics. The item and area entered are not stored as search
+            history.
+          </li>
+          <li>
             <strong>Technical request data:</strong> the hosting or security
             provider may process connection details such as an IP address in
             operational logs. The application does not store IP addresses in
