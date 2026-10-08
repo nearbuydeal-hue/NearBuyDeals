@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const metricsPeriodSchema = z.enum(["7d", "30d", "all"]);
+export const metricsPeriodSchema = z.enum(["today", "7d", "30d", "all"]);
 
 const metricCount = z.number().int().nonnegative();
 const moneyAmount = z.number().nonnegative();
@@ -12,6 +12,7 @@ export const shopMetricsSchema = z.object({
   expiredListings: metricCount,
   removedListings: metricCount,
   customerContacts: metricCount,
+  successfulConnections: metricCount,
   phoneContacts: metricCount,
   whatsappContacts: metricCount,
   notifyRequests: metricCount,
@@ -52,6 +53,7 @@ export const adminMetricsSchema = z.object({
     phoneContacts: metricCount,
     whatsappContacts: metricCount,
     totalContacts: metricCount,
+    successfulConnections: metricCount,
     notifyRequests: metricCount,
     searches: metricCount,
   }),

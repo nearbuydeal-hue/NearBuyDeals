@@ -123,6 +123,7 @@ export default async function AdminMetricsPage({
               defaultValue={period}
               className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
             >
+              <option value="today">Today</option>
               <option value="7d">Last 7 days</option>
               <option value="30d">Last 30 days</option>
               <option value="all">All time</option>
@@ -157,6 +158,11 @@ export default async function AdminMetricsPage({
             label="Total contacts"
             value={metrics.customerDemand.totalContacts}
             detail="Recorded clicks on phone or WhatsApp contact links."
+          />
+          <MetricCard
+            label="Successful local stock connections"
+            value={metrics.customerDemand.successfulConnections}
+            detail="Beta signal: a customer discovered a listing and took a contact action; not a verified sale."
           />
           <MetricCard
             label="Phone contacts"

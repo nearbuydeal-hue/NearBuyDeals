@@ -278,11 +278,11 @@ export type Database = {
         Returns: undefined;
       };
       get_my_shop_metrics: {
-        Args: { _period: "7d" | "30d" | "all" };
+        Args: { _period: "today" | "7d" | "30d" | "all" };
         Returns: Json;
       };
       get_admin_metrics: {
-        Args: { _period: "7d" | "30d" | "all" };
+        Args: { _period: "today" | "7d" | "30d" | "all" };
         Returns: Json;
       };
       record_public_search: {
@@ -290,7 +290,7 @@ export type Database = {
         Returns: undefined;
       };
       get_admin_search_count: {
-        Args: { _period: "7d" | "30d" | "all" };
+        Args: { _period: "today" | "7d" | "30d" | "all" };
         Returns: number;
       };
     };
